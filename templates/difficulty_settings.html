@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres de difficulté{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/difficulty_settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Paramètres de difficulté</h1>
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-4">Définissez le temps de révision (en minutes) pour chaque niveau de difficulté. Les temps doivent être croissants du niveau très difficile au niveau très facile.</p>
+            <form id="difficulty-form">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="very_hard" class="form-label fw-bold">Très difficile</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="very_hard" name="very_hard" min="1" value="{{ settings['very_hard'] }}" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="hard" class="form-label fw-bold">Difficile</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="hard" name="hard" min="1" value="{{ settings['hard'] }}" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="medium" class="form-label fw-bold">Moyen</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="medium" name="medium" min="1" value="{{ settings['medium'] }}" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="easy" class="form-label fw-bold">Facile</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="easy" name="easy" min="1" value="{{ settings['easy'] }}" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-group">
+                            <label for="very_easy" class="form-label fw-bold">Très facile</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="very_easy" name="very_easy" min="1" value="{{ settings['very_easy'] }}" required>
+                                <span class="input-group-text">minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/difficulty_settings.js') }}"></script>
+{% endblock %}

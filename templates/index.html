@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Revision</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% extends "base.html" %}
+
+        {% block title %}Accueil{% endblock %}
+
+        {% block content %}
+        <h1>Mes Decks de Révision</h1>
+
+        <!-- Bouton des paramètres -->
+        <button class="settings-button" onclick="toggleSettings()">
+            ⚙️ Paramètres
+        </button>
+
+        <!-- Panneau des paramètres de difficulté -->
+        <div class="settings-panel" id="settings-panel">
+            <button class="settings-close" onclick="toggleSettings()">×</button>
+            <h2 class="settings-title">Paramètres de difficulté</h2>
+            <div id="difficulty-settings">
+                <!-- Le contenu sera généré par JavaScript -->
+            </div>
+        </div>
+
+        <button class="new-deck-btn" onclick="window.location.href='/create-deck'">Créer un nouveau deck</button>
+
+        <div class="decks-grid">
+            {% for deck in decks %}
+            <div class="deck-card">
+                <div class="deck-header">
+                    <a href="/decks/{{ deck.id }}" class="deck-link">
+                        <h2 class="deck-name">{{ deck.deck_name }}</h2>
+                        <p>Créé le {{ deck.date_created }}</p>
+                        <p>{{ deck.flashcards|length }} cartes</p>
+                    </a>
+                    <button class="delete-btn" onclick="deleteDeck('{{ deck.id }}', event)">×</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endblock %}
+
+        {% block scripts %}
+        <script src="{{ url_for('static', filename='js/difficulty_settings.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/deck_manager.js') }}"></script>
+        {% endblock %}
+    </div>
+</body>
+</html>

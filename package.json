@@ -1,0 +1,9 @@
+{
+  "name": "smart-revision-app",
+  "version": "0.1.0",
+  "description": "Smart Revision Application",
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.11.2"
+  }
+}

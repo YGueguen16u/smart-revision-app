@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deck.deck_name }} - Smart Revision{% endblock %}
+
+{% block extra_css %}
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+
+    .deck-card {
+        border: 1px solid rgba(0,0,0,.125);
+        border-radius: .25rem;
+        margin-bottom: 1rem;
+    }
+
+    .deck-header {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .deck-title {
+        color: #333;
+        margin: 0;
+        font-size: 2em;
+    }
+
+    .deck-info {
+        color: #666;
+        margin-top: 10px;
+    }
+
+    .deck-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.3s;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .card-list {
+        margin-top: 20px;
+    }
+
+    .card-item {
+        background-color: white;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #666;
+        text-decoration: none;
+    }
+
+    .back-link:hover {
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="/" class="back-link">← Retour aux decks</a>
+    
+    <div class="deck-header">
+        <h1 class="deck-title">{{ deck.deck_name }}</h1>
+        <p class="deck-info">{{ deck.cards|length }} cartes dans ce deck</p>
+        <div class="deck-actions">
+            <button class="btn btn-primary" onclick="addCard()">Ajouter une carte</button>
+            <button class="btn btn-secondary" onclick="startRevision()">Commencer la révision</button>
+        </div>
+    </div>
+
+    <div class="accordion" id="decksAccordion">
+        <!-- Cartes à réviser maintenant -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingNow">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNow" aria-expanded="true" aria-controls="collapseNow">
+                    À réviser maintenant ({{ cards_to_review_now|length }})
+                </button>
+            </h2>
+            <div id="collapseNow" class="accordion-collapse collapse show" aria-labelledby="headingNow" data-bs-parent="#decksAccordion">
+                <div class="accordion-body">
+                    {% if cards_to_review_now %}
+                        {% for card in cards_to_review_now %}
+                        <div class="card-item">
+                            <div class="card-content">
+                                <h3>Question :</h3>
+                                <p>{{ card.question }}</p>
+                                <h3>Réponse :</h3>
+                                <p>{{ card.answer }}</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" onclick="editCard('{{ card.id }}', '{{ card.question }}', '{{ card.answer }}')">Modifier</button>
+                                <button class="btn btn-danger" onclick="deleteCard('{{ card.id }}')">Supprimer</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>Aucune carte à réviser pour le moment.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartes à réviser plus tard -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingLater">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLater" aria-expanded="false" aria-controls="collapseLater">
+                    À réviser plus tard ({{ cards_to_review_later|length }})
+                </button>
+            </h2>
+            <div id="collapseLater" class="accordion-collapse collapse" aria-labelledby="headingLater" data-bs-parent="#decksAccordion">
+                <div class="accordion-body">
+                    {% if cards_to_review_later %}
+                        {% for card in cards_to_review_later %}
+                        <div class="card-item">
+                            <div class="card-content">
+                                <h3>Question :</h3>
+                                <p>{{ card.question }}</p>
+                                <h3>Réponse :</h3>
+                                <p>{{ card.answer }}</p>
+                                <p class="text-muted">Prochaine révision : {{ card.next_review }}</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" onclick="editCard('{{ card.id }}', '{{ card.question }}', '{{ card.answer }}')">Modifier</button>
+                                <button class="btn btn-danger" onclick="deleteCard('{{ card.id }}')">Supprimer</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>Aucune carte à réviser plus tard.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour ajouter/modifier une carte -->
+<div class="modal fade" id="cardModal" tabindex="-1" aria-labelledby="cardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cardModalLabel">Ajouter une carte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cardForm">
+                    <input type="hidden" id="cardId">
+                    <div class="mb-3">
+                        <label for="question" class="form-label">Question</label>
+                        <textarea class="form-control" id="question" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="answer" class="form-label">Réponse</label>
+                        <textarea class="form-control" id="answer" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="saveCard()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addCard() {
+    document.getElementById('cardModalLabel').textContent = 'Ajouter une carte';
+    document.getElementById('cardForm').reset();
+    document.getElementById('cardId').value = '';
+    var modal = new bootstrap.Modal(document.getElementById('cardModal'));
+    modal.show();
+}
+
+function editCard(cardId, question, answer) {
+    document.getElementById('cardModalLabel').textContent = 'Modifier la carte';
+    document.getElementById('cardId').value = cardId;
+    document.getElementById('question').value = question;
+    document.getElementById('answer').value = answer;
+    var modal = new bootstrap.Modal(document.getElementById('cardModal'));
+    modal.show();
+}
+
+function saveCard() {
+    const cardId = document.getElementById('cardId').value;
+    const question = document.getElementById('question').value;
+    const answer = document.getElementById('answer').value;
+    const url = cardId ? `/api/decks/{{ deck.deck_name }}/cards/${cardId}` : `/api/decks/{{ deck.deck_name }}/cards`;
+    const method = cardId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            question: question,
+            answer: answer,
+            type: 'traditional'
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Une erreur est survenue');
+        }
+    });
+}
+
+function deleteCard(cardId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+        fetch(`/api/decks/{{ deck.deck_name }}/cards/${cardId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Une erreur est survenue');
+            }
+        });
+    }
+}
+
+function startRevision() {
+    window.location.href = `/decks/{{ deck.deck_name }}/review`;
+}
+</script>
+{% endblock %}

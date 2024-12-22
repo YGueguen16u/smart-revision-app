@@ -1,0 +1,9 @@
+{
+    "difficulty_levels": {
+        "easy": 210,
+        "hard": 90,
+        "medium": 150,
+        "very_easy": 270,
+        "very_hard": 30
+    }
+}
