@@ -163,6 +163,56 @@ def view_deck(deck_name):
                          cards_to_review_now=cards_to_review_now,
                          cards_to_review_later=cards_to_review_later)
 
+@app.route('/decks/<deck_name>/add-card')
+def add_card_page(deck_name):
+    """Page d'ajout de carte"""
+    deck = get_deck(deck_name)
+    if deck is None:
+        return redirect('/')
+    return render_template('add_card.html', deck=deck)
+
+@app.route('/api/decks/<deck_name>/cards', methods=['POST'])
+def add_card(deck_name):
+    """Ajoute une carte à un deck"""
+    deck = get_deck(deck_name)
+    if deck is None:
+        return jsonify({'error': 'Deck non trouvé'}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Données manquantes'}), 400
+
+    # Générer un ID unique pour la carte
+    card_id = f"flashcard_{str(uuid.uuid4())[:8]}"
+    
+    # Créer la nouvelle carte
+    new_card = {
+        "id": card_id,
+        "type": data.get('type', 'traditional'),
+        "question": data.get('question'),
+        "response": data.get('response'),
+        "tags": data.get('tags', []),
+        "feedback": data.get('feedback', ''),
+        "difficulty": data.get('difficulty', 'Medium'),
+        "date_created": data.get('date_created'),
+        "date_last_reviewed": data.get('date_last_reviewed'),
+        "date_next_review": data.get('date_next_review'),
+        "statistics": data.get('statistics', {"successes": 0, "failures": 0}),
+        "multimedia": data.get('multimedia', {"image": None, "audio": None, "video": None})
+    }
+
+    # Ajouter la carte au deck
+    if 'flashcards' not in deck:
+        deck['flashcards'] = []
+    deck['flashcards'].append(new_card)
+
+    # Sauvegarder le deck
+    deck_path = decks_dir / f"{deck_name}.json"
+    with open(deck_path, 'w', encoding='utf-8') as f:
+        json.dump(deck, f, ensure_ascii=False, indent=2)
+
+    return jsonify(new_card), 201
+
 @app.route('/api/decks/<deck_id>', methods=['DELETE'])
 def delete_deck(deck_id):
     if delete_deck_file(deck_id):
@@ -170,7 +220,7 @@ def delete_deck(deck_id):
     return jsonify({'error': 'Deck non trouvé'}), 404
 
 @app.route('/api/decks/<deck_id>/cards', methods=['POST'])
-def add_card(deck_id):
+def add_card_api(deck_id):
     """Ajoute une carte à un deck"""
     deck = get_deck(deck_id)
     if deck is None:

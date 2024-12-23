@@ -97,13 +97,17 @@
 {% block content %}
 <div class="container mt-4">
     <a href="/" class="back-link">← Retour aux decks</a>
-    
+    <h1>{{ deck.deck_name }}</h1>
+    <div class="mb-4">
+        <a href="/decks/{{ deck.deck_name }}/add-card" class="btn btn-primary">Ajouter une carte</a>
+    </div>
     <div class="deck-header">
-        <h1 class="deck-title">{{ deck.deck_name }}</h1>
         <p class="deck-info">{{ deck.cards|length }} cartes dans ce deck</p>
         <div class="deck-actions">
-            <button class="btn btn-primary" onclick="addCard()">Ajouter une carte</button>
             <button class="btn btn-secondary" onclick="startRevision()">Commencer la révision</button>
+            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#cardsModal">
+                <i class="fas fa-list"></i> Voir toutes les cartes
+            </button>
         </div>
     </div>
 
@@ -119,16 +123,35 @@
                 <div class="accordion-body">
                     {% if cards_to_review_now %}
                         {% for card in cards_to_review_now %}
-                        <div class="card-item">
-                            <div class="card-content">
-                                <h3>Question :</h3>
-                                <p>{{ card.question }}</p>
-                                <h3>Réponse :</h3>
-                                <p>{{ card.answer }}</p>
-                            </div>
-                            <div class="card-actions">
-                                <button class="btn btn-secondary" onclick="editCard('{{ card.id }}', '{{ card.question }}', '{{ card.answer }}')">Modifier</button>
-                                <button class="btn btn-danger" onclick="deleteCard('{{ card.id }}')">Supprimer</button>
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ card.question }}</h5>
+                                <p class="card-text">{{ card.answer }}</p>
+                                <div class="tags-container">
+                                    {% for tag in card.tags %}
+                                    <div class="tag-item">
+                                        <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
+                                            {{ tag.name }}
+                                        </button>
+                                        {% if tag.subtags %}
+                                        <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
+                                            {% for subtag in tag.subtags recursive %}
+                                            <div class="subtag-item ms-3">
+                                                <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                    {{ subtag.name }}
+                                                </button>
+                                                {% if subtag.subtags %}
+                                                <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                    {{ loop(subtag.subtags) }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -150,17 +173,36 @@
                 <div class="accordion-body">
                     {% if cards_to_review_later %}
                         {% for card in cards_to_review_later %}
-                        <div class="card-item">
-                            <div class="card-content">
-                                <h3>Question :</h3>
-                                <p>{{ card.question }}</p>
-                                <h3>Réponse :</h3>
-                                <p>{{ card.answer }}</p>
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ card.question }}</h5>
+                                <p class="card-text">{{ card.answer }}</p>
                                 <p class="text-muted">Prochaine révision : {{ card.next_review }}</p>
-                            </div>
-                            <div class="card-actions">
-                                <button class="btn btn-secondary" onclick="editCard('{{ card.id }}', '{{ card.question }}', '{{ card.answer }}')">Modifier</button>
-                                <button class="btn btn-danger" onclick="deleteCard('{{ card.id }}')">Supprimer</button>
+                                <div class="tags-container">
+                                    {% for tag in card.tags %}
+                                    <div class="tag-item">
+                                        <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
+                                            {{ tag.name }}
+                                        </button>
+                                        {% if tag.subtags %}
+                                        <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
+                                            {% for subtag in tag.subtags recursive %}
+                                            <div class="subtag-item ms-3">
+                                                <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                    {{ subtag.name }}
+                                                </button>
+                                                {% if subtag.subtags %}
+                                                <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                    {{ loop(subtag.subtags) }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -168,6 +210,49 @@
                         <p>Aucune carte à réviser plus tard.</p>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour afficher toutes les cartes -->
+<div class="modal fade" id="cardsModal" tabindex="-1" aria-labelledby="cardsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cardsModalLabel">Toutes les cartes du deck</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Question</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for card in deck.flashcards %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">{{ card.type }}</span>
+                                </td>
+                                <td>{{ card.question }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteCard('{{ card.id }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
             </div>
         </div>
     </div>
@@ -256,10 +341,14 @@ function deleteCard(cardId) {
         })
         .then(response => {
             if (response.ok) {
-                window.location.reload();
+                location.reload();
             } else {
-                alert('Une erreur est survenue');
+                alert('Erreur lors de la suppression de la carte');
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de la suppression de la carte');
         });
     }
 }

@@ -1,0 +1,33 @@
+.form-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.input-group-text {
+    min-width: 70px;
+}
+
+.btn {
+    margin-right: 10px;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.multimedia-preview {
+    max-width: 200px;
+    max-height: 200px;
+    margin-top: 10px;
+    display: none;
+}
