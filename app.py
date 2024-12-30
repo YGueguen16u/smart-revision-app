@@ -194,18 +194,18 @@ def view_deck(deck_name):
                          cards_to_review_now=cards_to_review_now,
                          cards_to_review_later=cards_to_review_later)
 
-@app.route('/decks/<deck_name>/add-card')
-def add_card_page(deck_name):
+@app.route('/decks/<deck_id>/add-card')
+def add_card_page(deck_id):
     """Page d'ajout de carte"""
-    deck = get_deck(deck_name)
+    deck = get_deck(deck_id)
     if deck is None:
         return redirect('/')
     return render_template('add_card.html', deck=deck)
 
-@app.route('/api/decks/<deck_name>/cards', methods=['POST'])
-def add_card(deck_name):
+@app.route('/api/decks/<deck_id>/cards', methods=['POST'])
+def add_card(deck_id):
     """Ajoute une carte à un deck"""
-    deck = get_deck(deck_name)
+    deck = get_deck(deck_id)
     if deck is None:
         return jsonify({'error': 'Deck non trouvé'}), 404
 
@@ -238,7 +238,7 @@ def add_card(deck_name):
     deck['flashcards'].append(new_card)
 
     # Sauvegarder le deck
-    deck_path = decks_dir / f"{deck_name}.json"
+    deck_path = decks_dir / f"{deck_id}.json"
     with open(deck_path, 'w', encoding='utf-8') as f:
         json.dump(deck, f, ensure_ascii=False, indent=2)
 

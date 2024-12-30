@@ -242,19 +242,6 @@ class DifficultySettings {
     }
 }
 
-function toggleSettings() {
-    const overlay = document.getElementById('settings-overlay');
-    if (overlay.style.display === 'flex') {
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            overlay.style.opacity = '1';
-        }, 300);
-    } else {
-        overlay.style.display = 'flex';
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     new DifficultySettings();
 });

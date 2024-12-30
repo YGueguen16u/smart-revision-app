@@ -47,12 +47,12 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Ajouter la carte</button>
-        <a href="/decks/{{ deck.deck_name }}" class="btn btn-secondary">Retour au deck</a>
+        <a href="/decks/{{ deck.id }}" class="btn btn-secondary">Retour au deck</a>
     </form>
 </div>
 
 <script>
-    const deckName = "{{ deck.deck_name }}";
+    const deckId = "{{ deck.id }}";
 </script>
 <script src="{{ url_for('static', filename='js/add_card.js') }}"></script>
 

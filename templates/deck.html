@@ -138,8 +138,8 @@
 <div class="container mt-4">
     <a href="/" class="back-link">← Retour aux decks</a>
     <h1>{{ deck.deck_name }}</h1>
-    <div class="mb-4">
-        <a href="/decks/{{ deck.deck_name }}/add-card" class="btn btn-primary">Ajouter une carte</a>
+    <div class="deck-actions mb-4">
+        <a href="/decks/{{ deck.id }}/add-card" class="btn btn-primary">Ajouter une carte</a>
     </div>
     <div class="deck-header">
         <p class="deck-info">{{ deck.cards|length }} cartes dans ce deck</p>

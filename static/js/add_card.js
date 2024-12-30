@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        fetch(`/api/decks/${deckName}/cards`, {
+        fetch(`/api/decks/${deckId}/cards`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (response.ok) {
-                window.location.href = `/decks/${deckName}`;
+                window.location.href = `/decks/${deckId}`;
             } else {
                 alert('Erreur lors de l\'ajout de la carte');
             }
