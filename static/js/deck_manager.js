@@ -76,3 +76,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function startRevision() {
+    // Récupère le nom du deck depuis l'URL actuelle
+    const pathParts = window.location.pathname.split('/');
+    const deckName = pathParts[pathParts.length - 1];
+    
+    // Redirige vers la page de révision
+    window.location.href = `/decks/${deckName}/review`;
+}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Révision - {{ deck.deck_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/review.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="/decks/{{ deck.deck_name }}" class="btn btn-outline-secondary mb-4">← Retour au deck</a>
+    
+    <h1>Révision - {{ deck.deck_name }}</h1>
+    
+    <div class="review-card card mt-4">
+        <div class="card-body">
+            <div id="questionContainer" class="card-content mb-4">
+                <h5 class="card-title">Question</h5>
+                <p id="questionText" class="card-text"></p>
+            </div>
+            
+            <div id="answerContainer" class="card-content mb-4" style="display: none;">
+                <h5 class="card-title">Réponse</h5>
+                <p id="answerText" class="card-text"></p>
+            </div>
+            
+            <div id="showAnswerBtn" class="text-center">
+                <button class="btn btn-primary btn-lg" onclick="showAnswer()">Voir la réponse</button>
+            </div>
+            
+            <div id="feedbackBtns" class="feedback-buttons" style="display: none;">
+                <p class="mb-3">Évaluez votre réponse :</p>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger btn-lg" onclick="submitFeedback(1)">Très difficile</button>
+                    <button class="btn btn-warning btn-lg" onclick="submitFeedback(2)">Difficile</button>
+                    <button class="btn btn-info btn-lg" onclick="submitFeedback(3)">Moyen</button>
+                    <button class="btn btn-primary btn-lg" onclick="submitFeedback(4)">Facile</button>
+                    <button class="btn btn-success btn-lg" onclick="submitFeedback(5)">Très facile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const deckName = "{{ deck.deck_name }}";
+</script>
+<script src="{{ url_for('static', filename='js/review.js') }}"></script>
+<script>
+    // Initialiser la révision avec les cartes
+    initializeReview({{ cards|tojson|safe }});
+</script>
+{% endblock %}

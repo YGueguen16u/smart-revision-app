@@ -183,8 +183,11 @@ def view_deck(deck_name):
         if next_review <= current_time:
             cards_to_review_now.append(card)
         else:
-            card['next_review'] = datetime.fromtimestamp(next_review).strftime('%d/%m/%Y %H:%M')
+            card['next_review_display'] = datetime.fromtimestamp(next_review).strftime('%d/%m/%Y %H:%M')
             cards_to_review_later.append(card)
+    
+    # Trier les cartes à réviser plus tard par date de révision croissante
+    cards_to_review_later.sort(key=lambda x: x.get('next_review', 0))
 
     return render_template('deck.html', 
                          deck=deck,
@@ -460,6 +463,61 @@ def update_difficulty_settings():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/decks/<deck_name>/review')
+def start_review(deck_name):
+    """Démarre une session de révision pour un deck"""
+    deck = get_deck(deck_name)
+    if deck is None:
+        return redirect('/')
+    
+    current_time = int(time.time())
+    cards_to_review = [card for card in deck.get('flashcards', []) 
+                      if card.get('next_review', 0) <= current_time]
+    
+    if not cards_to_review:
+        return redirect(f'/decks/{deck_name}')
+        
+    return render_template('review.html', deck=deck, cards=cards_to_review)
+
+@app.route('/api/decks/<deck_name>/cards/<card_id>/review', methods=['POST'])
+def update_card_review(deck_name, card_id):
+    """Met à jour une carte après une révision"""
+    data = request.get_json()
+    if not data or 'quality' not in data or 'next_interval' not in data:
+        return jsonify({'error': 'Données manquantes'}), 400
+        
+    deck = get_deck(deck_name)
+    if deck is None:
+        return jsonify({'error': 'Deck non trouvé'}), 404
+        
+    # Trouver la carte
+    card = None
+    for c in deck['flashcards']:
+        if str(c.get('id')) == str(card_id):
+            card = c
+            break
+            
+    if card is None:
+        return jsonify({'error': 'Carte non trouvée'}), 404
+        
+    # Mettre à jour les statistiques de la carte
+    if data['quality'] >= 3:
+        card['statistics']['successes'] = card['statistics'].get('successes', 0) + 1
+    else:
+        card['statistics']['failures'] = card['statistics'].get('failures', 0) + 1
+        
+    # Mettre à jour les dates de révision
+    current_time = int(time.time())
+    card['date_last_reviewed'] = current_time
+    card['next_review'] = current_time + (data['next_interval'] * 60)  # Convertir minutes en secondes
+    
+    # Sauvegarder le deck
+    deck_path = decks_dir / f"{deck_name}.json"
+    with open(deck_path, 'w', encoding='utf-8') as f:
+        json.dump(deck, f, ensure_ascii=False, indent=2)
+        
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     app.run(debug=True)
