@@ -464,10 +464,10 @@ def update_difficulty_settings():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/decks/<deck_name>/review')
-def start_review(deck_name):
+@app.route('/decks/<deck_id>/review')
+def start_review(deck_id):
     """Démarre une session de révision pour un deck"""
-    deck = get_deck(deck_name)
+    deck = get_deck(deck_id)
     if deck is None:
         return redirect('/')
     
@@ -476,7 +476,7 @@ def start_review(deck_name):
                       if card.get('next_review', 0) <= current_time]
     
     if not cards_to_review:
-        return redirect(f'/decks/{deck_name}')
+        return redirect(f'/decks/{deck_id}')
         
     return render_template('review.html', deck=deck, cards=cards_to_review)
 
