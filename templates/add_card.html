@@ -3,46 +3,51 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Ajouter une carte</h2>
-    <form id="cardForm" class="mt-4">
+    <form id="cardForm" class="mt-4" method="POST" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="question" class="form-label">Question</label>
-            <textarea class="form-control" id="question" rows="3" required></textarea>
+            <textarea class="form-control" id="question" name="question" rows="3" required></textarea>
         </div>
-        
         <div class="mb-3">
             <label for="response" class="form-label">Réponse</label>
-            <textarea class="form-control" id="response" rows="3" required></textarea>
+            <textarea class="form-control" id="response" name="response" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="feedback" class="form-label">Feedback</label>
+            <textarea class="form-control" id="feedback" name="feedback" rows="3"></textarea>
         </div>
 
+        <!-- Champs cachés -->
+        <input type="hidden" name="type" value="traditional">
+        <input type="hidden" name="tags" id="tagsInput">
+
+        <!-- Section Tags -->
         <div class="mb-3">
             <label class="form-label">Tags</label>
-            <div id="tagsContainer">
-                <div class="tag-input-group mb-2">
-                    <input type="text" class="form-control tag-input" placeholder="Nouveau tag">
-                    <button type="button" class="btn btn-primary add-tag-btn">Ajouter Tag</button>
-                </div>
+            <div class="input-group">
+                <input type="text" class="form-control" id="tagInput" placeholder="Ajouter un tag">
+                <button type="button" class="btn btn-primary" id="addTagBtn">Ajouter Tag</button>
             </div>
             <div id="tagsList" class="mt-2"></div>
         </div>
 
-        <div class="mb-3">
-            <label for="feedback" class="form-label">Feedback/Note</label>
-            <textarea class="form-control" id="feedback" rows="2"></textarea>
-        </div>
-
+        <!-- Section Multimédia -->
         <div class="mb-3">
             <label class="form-label">Multimédia</label>
             <div class="input-group mb-2">
                 <span class="input-group-text">Image</span>
-                <input type="file" class="form-control" id="image" accept="image/*">
+                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            </div>
+            <div id="imagePreview" class="mt-2 mb-2" style="display: none;">
+                <img src="" alt="Prévisualisation" style="max-width: 150px; max-height: 150px;" class="img-thumbnail">
             </div>
             <div class="input-group mb-2">
                 <span class="input-group-text">Audio</span>
-                <input type="file" class="form-control" id="audio" accept="audio/*">
+                <input type="file" class="form-control" id="audio" name="audio" accept="audio/*">
             </div>
             <div class="input-group">
                 <span class="input-group-text">Vidéo</span>
-                <input type="file" class="form-control" id="video" accept="video/*">
+                <input type="file" class="form-control" id="video" name="video" accept="video/*">
             </div>
         </div>
 
@@ -200,8 +205,8 @@ function findAndRemoveTag(parentTag, tagId) {
     return null;
 }
 
-document.querySelector('.add-tag-btn').addEventListener('click', () => {
-    const input = document.querySelector('.tag-input');
+document.getElementById('addTagBtn').addEventListener('click', () => {
+    const input = document.getElementById('tagInput');
     const tagValue = input.value.trim();
     if (!tagValue) return;
     
@@ -222,58 +227,53 @@ document.querySelector('.add-tag-btn').addEventListener('click', () => {
     input.value = '';
 });
 
-document.getElementById('cardForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const currentDate = new Date().toISOString().split('T')[0];
-    
-    function convertTagsToJson(tag) {
-        const result = { name: tag.name };
-        if (tag.subtags && tag.subtags.length > 0) {
-            result.subtags = tag.subtags.map(convertTagsToJson);
-        }
-        return result;
-    }
-    
-    const cardData = {
-        type: "traditional",
-        question: document.getElementById('question').value,
-        response: document.getElementById('response').value,
-        tags: Array.from(tagsData.values()).map(convertTagsToJson),
-        feedback: document.getElementById('feedback').value,
-        date_created: currentDate,
-        date_last_reviewed: currentDate,
-        date_next_review: currentDate,
-        statistics: {
-            successes: 0,
-            failures: 0
-        },
-        multimedia: {
-            image: null,
-            audio: null,
-            video: null
-        }
-    };
+document.getElementById('image').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    const img = preview.querySelector('img');
+    const file = e.target.files[0];
 
-    fetch(`/api/decks/{{ deck.deck_name }}/cards`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(cardData)
-    })
-    .then(response => {
-        if (response.ok) {
-            window.location.href = `/decks/{{ deck.deck_name }}`;
-        } else {
-            alert('Erreur lors de l\'ajout de la carte');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            preview.style.display = 'block';
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Erreur lors de l\'ajout de la carte');
-    });
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
 });
+
+document.getElementById('cardForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Mettre à jour le champ tags
+    document.getElementById('tagsInput').value = JSON.stringify([...tagsData.values()].map(convertTagsToJson));
+
+    try {
+        const response = await fetch(`/api/decks/{{ deck.deck_name }}/cards`, {
+            method: 'POST',
+            body: new FormData(this)
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de l\'ajout de la carte');
+        }
+
+        window.location.href = `/decks/{{ deck.deck_name }}`;
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+    }
+});
+
+function convertTagsToJson(tag) {
+    const result = { name: tag.name };
+    if (tag.subtags && tag.subtags.length > 0) {
+        result.subtags = tag.subtags.map(convertTagsToJson);
+    }
+    return result;
+}
 </script>
 
 <style>

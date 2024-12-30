@@ -91,6 +91,46 @@
     .back-link:hover {
         color: #333;
     }
+
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+        margin: 10px 0;
+    }
+
+    .tag-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .tag-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .subtags-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-left: 20px;
+        width: 100%;
+    }
+
+    .subtag-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .tag-item button, .subtag-item button {
+        white-space: nowrap;
+    }
 </style>
 {% endblock %}
 
@@ -130,25 +170,27 @@
                                 <div class="tags-container">
                                     {% for tag in card.tags %}
                                     <div class="tag-item">
-                                        <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
-                                            {{ tag.name }}
-                                        </button>
-                                        {% if tag.subtags %}
-                                        <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
-                                            {% for subtag in tag.subtags recursive %}
-                                            <div class="subtag-item ms-3">
-                                                <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
-                                                    {{ subtag.name }}
-                                                </button>
-                                                {% if subtag.subtags %}
-                                                <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
-                                                    {{ loop(subtag.subtags) }}
+                                        <div class="tag-content">
+                                            <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
+                                                {{ tag.name }}
+                                            </button>
+                                            {% if tag.subtags %}
+                                            <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
+                                                {% for subtag in tag.subtags recursive %}
+                                                <div class="subtag-item">
+                                                    <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                        {{ subtag.name }}
+                                                    </button>
+                                                    {% if subtag.subtags %}
+                                                    <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                        {{ loop(subtag.subtags) }}
+                                                    </div>
+                                                    {% endif %}
                                                 </div>
-                                                {% endif %}
+                                                {% endfor %}
                                             </div>
-                                            {% endfor %}
+                                            {% endif %}
                                         </div>
-                                        {% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -181,25 +223,27 @@
                                 <div class="tags-container">
                                     {% for tag in card.tags %}
                                     <div class="tag-item">
-                                        <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
-                                            {{ tag.name }}
-                                        </button>
-                                        {% if tag.subtags %}
-                                        <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
-                                            {% for subtag in tag.subtags recursive %}
-                                            <div class="subtag-item ms-3">
-                                                <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
-                                                    {{ subtag.name }}
-                                                </button>
-                                                {% if subtag.subtags %}
-                                                <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
-                                                    {{ loop(subtag.subtags) }}
+                                        <div class="tag-content">
+                                            <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#tag_{{ card.id }}_{{ loop.index }}">
+                                                {{ tag.name }}
+                                            </button>
+                                            {% if tag.subtags %}
+                                            <div class="collapse subtags-container" id="tag_{{ card.id }}_{{ loop.index }}">
+                                                {% for subtag in tag.subtags recursive %}
+                                                <div class="subtag-item">
+                                                    <button class="btn btn-sm btn-outline-secondary toggle-tag" data-bs-toggle="collapse" data-bs-target="#subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                        {{ subtag.name }}
+                                                    </button>
+                                                    {% if subtag.subtags %}
+                                                    <div class="collapse subtags-container" id="subtag_{{ card.id }}_{{ loop.index0 }}_{{ loop.index }}">
+                                                        {{ loop(subtag.subtags) }}
+                                                    </div>
+                                                    {% endif %}
                                                 </div>
-                                                {% endif %}
+                                                {% endfor %}
                                             </div>
-                                            {% endfor %}
+                                            {% endif %}
                                         </div>
-                                        {% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -234,14 +278,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for card in deck.flashcards %}
+                            {% for card in cards_to_review_now + cards_to_review_later %}
                             <tr>
                                 <td>
                                     <span class="badge bg-secondary">{{ card.type }}</span>
                                 </td>
                                 <td>{{ card.question }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteCard('{{ card.id }}')">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteCard('{{ card.id }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -288,8 +332,32 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
+function deleteCard(cardId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
+        fetch(`/api/decks/{{ deck.deck_name }}/cards/${cardId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                response.json().then(data => {
+                    alert('Erreur lors de la suppression de la carte: ' + (data.error || 'Erreur inconnue'));
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de la suppression de la carte');
+        });
+    }
+}
+
 function addCard() {
     document.getElementById('cardModalLabel').textContent = 'Ajouter une carte';
     document.getElementById('cardForm').reset();
@@ -332,25 +400,6 @@ function saveCard() {
             alert('Une erreur est survenue');
         }
     });
-}
-
-function deleteCard(cardId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) {
-        fetch(`/api/decks/{{ deck.deck_name }}/cards/${cardId}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Erreur lors de la suppression de la carte');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Erreur lors de la suppression de la carte');
-        });
-    }
 }
 
 function startRevision() {

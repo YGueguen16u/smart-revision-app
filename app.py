@@ -5,6 +5,7 @@ import pathlib
 import uuid
 import time
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 
@@ -17,6 +18,7 @@ user_home = pathlib.Path.home()
 app_data_dir = user_home / 'SmartRevisionApp'
 data_dir = app_data_dir / 'data'
 decks_dir = data_dir / 'decks'
+multimedia_dir = data_dir / 'multimedia'
 
 # Création des dossiers
 project_data_dir.mkdir(exist_ok=True)
@@ -24,10 +26,23 @@ project_config_dir.mkdir(exist_ok=True)
 app_data_dir.mkdir(exist_ok=True)
 data_dir.mkdir(exist_ok=True)
 decks_dir.mkdir(exist_ok=True)
+multimedia_dir.mkdir(exist_ok=True)
+
+# Configuration pour l'upload de fichiers
+MULTIMEDIA_FOLDER = str(multimedia_dir)
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+
+# Créer les dossiers multimedia s'ils n'existent pas
+os.makedirs(os.path.join(MULTIMEDIA_FOLDER, 'images'), exist_ok=True)
+os.makedirs(os.path.join(MULTIMEDIA_FOLDER, 'audio'), exist_ok=True)
+os.makedirs(os.path.join(MULTIMEDIA_FOLDER, 'video'), exist_ok=True)
 
 app.config['DATA_FOLDER'] = str(data_dir)
 app.config['DECKS_FOLDER'] = str(decks_dir)
 app.config['CONFIG_FOLDER'] = str(project_config_dir)
+app.config['MULTIMEDIA_FOLDER'] = MULTIMEDIA_FOLDER
 
 def get_all_decks():
     """Récupère tous les decks"""
@@ -88,6 +103,18 @@ def delete_deck_file(deck_id):
         return True
     return False
 
+def allowed_file(filename, allowed_extensions):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+def save_uploaded_file(file, subfolder):
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        unique_filename = f"{str(uuid.uuid4())}_{filename}"
+        file_path = os.path.join(MULTIMEDIA_FOLDER, subfolder, unique_filename)
+        file.save(file_path)
+        return os.path.join('multimedia', subfolder, unique_filename)
+    return None
+
 @app.route('/')
 def home():
     decks = get_all_decks()
@@ -143,9 +170,11 @@ def view_deck(deck_name):
     deck = get_deck(deck_name)
     if deck is None:
         return redirect('/')
-
-    # Séparer les cartes en deux catégories
-    current_time = time.time()
+    
+    # Ajouter le nom du deck aux données
+    deck['name'] = deck_name
+    
+    current_time = int(time.time())
     cards_to_review_now = []
     cards_to_review_later = []
 
@@ -154,12 +183,11 @@ def view_deck(deck_name):
         if next_review <= current_time:
             cards_to_review_now.append(card)
         else:
-            # Formater la date de prochaine révision
             card['next_review'] = datetime.fromtimestamp(next_review).strftime('%d/%m/%Y %H:%M')
             cards_to_review_later.append(card)
 
     return render_template('deck.html', 
-                         deck=deck, 
+                         deck=deck,
                          cards_to_review_now=cards_to_review_now,
                          cards_to_review_later=cards_to_review_later)
 
@@ -221,50 +249,107 @@ def delete_deck(deck_id):
 
 @app.route('/api/decks/<deck_id>/cards', methods=['POST'])
 def add_card_api(deck_id):
-    """Ajoute une carte à un deck"""
-    deck = get_deck(deck_id)
-    if deck is None:
-        return jsonify({'error': 'Deck non trouvé'}), 404
-    
-    data = request.json
-    card = {
-        'id': str(uuid.uuid4()),
-        'question': data['question'],
-        'answer': data['answer'],
-        'created_at': datetime.now().strftime("%Y-%m-%d")
-    }
-    
-    # Ajoute la carte au deck
-    deck['flashcards'].append(card)
-    
-    # Sauvegarde le deck
-    file_path = decks_dir / f"{deck_id}.json"
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(deck, f, ensure_ascii=False, indent=2)
-    
-    return jsonify(card), 201
+    if not request.files and not request.form:
+        return jsonify({'error': 'Aucune donnée reçue'}), 400
 
-@app.route('/api/decks/<deck_id>/cards/<card_id>', methods=['PUT'])
-def update_card(deck_id, card_id):
-    """Modifie une carte existante"""
-    deck = get_deck(deck_id)
-    if deck is None:
-        return jsonify({'error': 'Deck non trouvé'}), 404
-    
-    data = request.json
-    for card in deck['flashcards']:
-        if card['id'] == card_id:
-            card['question'] = data['question']
-            card['answer'] = data['answer']
-            
-            # Sauvegarde le deck
-            file_path = decks_dir / f"{deck_id}.json"
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(deck, f, ensure_ascii=False, indent=2)
-            
-            return jsonify(card), 200
-    
-    return jsonify({'error': 'Carte non trouvée'}), 404
+    try:
+        deck = get_deck(deck_id)
+        if deck is None:
+            return jsonify({'error': 'Deck non trouvé'}), 404
+
+        # Récupérer les données du formulaire
+        question = request.form.get('question')
+        response = request.form.get('response')
+        if not question or not response:
+            return jsonify({'error': 'Question et réponse sont requises'}), 400
+
+        # Créer la nouvelle carte
+        new_card = {
+            'id': f"flashcard_{str(uuid.uuid4()).replace('-', '')}",
+            'type': 'traditional',
+            'question': question,
+            'response': response,
+            'feedback': request.form.get('feedback', ''),
+            'tags': json.loads(request.form.get('tags', '[]')),
+            'difficulty': 'Medium',
+            'date_created': datetime.now().strftime("%Y-%m-%d"),
+            'date_last_reviewed': datetime.now().strftime("%Y-%m-%d"),
+            'date_next_review': datetime.now().strftime("%Y-%m-%d"),
+            'statistics': {
+                'successes': 0,
+                'failures': 0
+            },
+            'multimedia': {
+                'image': None,
+                'audio': None,
+                'video': None
+            }
+        }
+
+        # Gérer les fichiers uploadés
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                new_card['multimedia']['image'] = save_uploaded_file(file, 'images')
+
+        if 'audio' in request.files:
+            file = request.files['audio']
+            if file and file.filename and allowed_file(file.filename, ALLOWED_AUDIO_EXTENSIONS):
+                new_card['multimedia']['audio'] = save_uploaded_file(file, 'audio')
+
+        if 'video' in request.files:
+            file = request.files['video']
+            if file and file.filename and allowed_file(file.filename, ALLOWED_VIDEO_EXTENSIONS):
+                new_card['multimedia']['video'] = save_uploaded_file(file, 'video')
+
+        # Ajouter la carte au deck
+        if 'flashcards' not in deck:
+            deck['flashcards'] = []
+        deck['flashcards'].append(new_card)
+        save_deck(deck)
+
+        return jsonify(new_card), 201
+
+    except Exception as e:
+        print(f"Erreur lors de l'ajout de la carte: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/decks/<deck_name>/cards/<card_id>', methods=['DELETE'])
+def delete_card(deck_name, card_id):
+    """Supprime une carte d'un deck"""
+    try:
+        # Charger le deck
+        deck_path = decks_dir / f"{deck_name}.json"
+        if not deck_path.exists():
+            return jsonify({'error': 'Deck non trouvé'}), 404
+
+        with open(deck_path, 'r', encoding='utf-8') as f:
+            deck = json.load(f)
+
+        # Vérifier si la carte existe
+        found = False
+        new_flashcards = []
+        for card in deck['flashcards']:
+            if str(card.get('id')) == str(card_id):
+                found = True
+            else:
+                new_flashcards.append(card)
+
+        if not found:
+            return jsonify({'error': 'Carte non trouvée'}), 404
+
+        # Mettre à jour le deck avec la carte supprimée
+        deck['flashcards'] = new_flashcards
+        
+        # Sauvegarder le deck
+        with open(deck_path, 'w', encoding='utf-8') as f:
+            json.dump(deck, f, ensure_ascii=False, indent=2)
+
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        print(f"Erreur lors de la suppression de la carte: {e}")
+        return jsonify({'error': 'Erreur lors de la suppression'}), 500
 
 @app.route('/api/config')
 def get_config():
