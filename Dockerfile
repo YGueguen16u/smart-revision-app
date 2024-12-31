@@ -6,8 +6,12 @@ WORKDIR /app
 COPY requirements.txt .
 COPY package.json .
 
-# Installer les dépendances
-RUN pip install --no-cache-dir -r requirements.txt
+# Créer et activer l'environnement virtuel
+RUN python -m venv venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Installer les dépendances dans l'environnement virtuel
+RUN . venv/bin/activate && pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y nodejs npm && npm install
 
 # Copier le reste du code
@@ -19,5 +23,5 @@ RUN mkdir -p data/config data/decks data/multimedia/images data/multimedia/audio
 # Exposer le port
 EXPOSE 8000
 
-# Commande de démarrage
-CMD ["python", "app.py"]
+# Commande de démarrage avec l'environnement virtuel
+CMD ["venv/bin/python", "app.py"]

@@ -2,11 +2,9 @@
 
 ## Démonstration
 
-https://user-images.githubusercontent.com/YGueguen16u/smart-revision-app/presentation/smart_revision_app.mp4
+[![Smart Revision App Demo](https://img.youtube.com/vi/SiMYimZXjFE/maxresdefault.jpg)](https://youtu.be/SiMYimZXjFE)
 
-Vous pouvez également voir la vidéo directement dans le dossier [presentation/smart_revision_app.mp4](presentation/smart_revision_app.mp4)
-
-*Regardez la vidéo de démonstration ci-dessus pour voir l'application en action !*
+*Cliquez sur l'image ci-dessus pour voir la démonstration de l'application !*
 
 ## À propos
 
@@ -54,6 +52,12 @@ docker-compose up --build
 # Cloner le repository
 git clone https://github.com/YGueguen16u/smart-revision-app.git
 cd smart-revision-app
+
+# Créer et activer l'environnement virtuel
+python -m venv venv
+source venv/bin/activate  # Sur Linux/Mac
+# ou
+venv\Scripts\activate     # Sur Windows
 
 # Installer les dépendances Python
 python -m pip install -r requirements.txt
