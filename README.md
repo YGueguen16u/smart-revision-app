@@ -2,7 +2,9 @@
 
 ## Démonstration
 
-https://github.com/YGueguen16u/smart-revision-app/presentation/smart_revision_app.mp4
+https://user-images.githubusercontent.com/YGueguen16u/smart-revision-app/presentation/smart_revision_app.mp4
+
+Vous pouvez également voir la vidéo directement dans le dossier [presentation/smart_revision_app.mp4](presentation/smart_revision_app.mp4)
 
 *Regardez la vidéo de démonstration ci-dessus pour voir l'application en action !*
 
