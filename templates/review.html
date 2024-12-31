@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <a href="/decks/{{ deck.deck_name }}" class="btn btn-outline-secondary mb-4">← Retour au deck</a>
+    <a href="/decks/{{ deck.name }}" class="btn btn-outline-secondary mb-4">← Retour au deck</a>
     
     <h1>Révision - {{ deck.deck_name }}</h1>
     
@@ -42,12 +42,9 @@
     </div>
 </div>
 
-<script>
-    const deckName = "{{ deck.deck_name }}";
-</script>
 <script src="{{ url_for('static', filename='js/review.js') }}"></script>
 <script>
-    // Initialiser la révision avec les cartes
+    const deckName = "{{ deck.name }}";
     initializeReview({{ cards|tojson|safe }});
 </script>
 {% endblock %}

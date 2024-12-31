@@ -63,14 +63,24 @@ def get_all_decks():
 
 def get_deck(deck_id):
     """Récupère un deck par son ID"""
+    # Essayer d'abord avec l'extension .json
     file_path = decks_dir / f"{deck_id}.json"
     if not file_path.exists():
-        return None
+        # Si le fichier n'existe pas, vérifier si deck_id contient déjà l'extension
+        if deck_id.endswith('.json'):
+            file_path = decks_dir / deck_id
+        else:
+            return None
     
-    with open(file_path, 'r', encoding='utf-8') as f:
-        deck = json.load(f)
-        deck['id'] = deck_id
-        return deck
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            deck = json.load(f)
+            # Stocker l'ID sans l'extension .json
+            deck['id'] = deck_id.replace('.json', '')
+            return deck
+    except Exception as e:
+        print(f"Error reading deck {deck_id}: {e}")
+        return None
 
 def save_deck(deck_data):
     # Nettoie le nom du deck pour l'utiliser comme nom de fichier
@@ -115,6 +125,26 @@ def save_uploaded_file(file, subfolder):
         return os.path.join('multimedia', subfolder, unique_filename)
     return None
 
+def update_deck_names():
+    """Met à jour tous les decks pour ajouter la clé 'name'"""
+    for deck_file in decks_dir.glob('*.json'):
+        try:
+            with open(deck_file, 'r', encoding='utf-8') as f:
+                deck = json.load(f)
+            
+            if 'name' not in deck:
+                # Le nom du fichier sans l'extension .json
+                deck['name'] = deck_file.stem
+                
+                with open(deck_file, 'w', encoding='utf-8') as f:
+                    json.dump(deck, f, ensure_ascii=False, indent=4)
+                print(f"Updated deck: {deck_file}")
+        except Exception as e:
+            print(f"Error updating deck {deck_file}: {e}")
+
+# Appeler la fonction au démarrage de l'application
+update_deck_names()
+
 @app.route('/')
 def home():
     decks = get_all_decks()
@@ -149,6 +179,7 @@ def create_deck():
     # Créer le nouveau deck
     deck = {
         'deck_name': deck_name,
+        'name': clean_name,  # Ajouter le nom du fichier
         'flashcards': [],
         'date_created': time.time()
     }
@@ -156,13 +187,12 @@ def create_deck():
     # Sauvegarder le deck
     try:
         with open(deck_path, 'w', encoding='utf-8') as f:
-            json.dump(deck, f, ensure_ascii=False, indent=4)
+            json.dump(deck, f, indent=4, ensure_ascii=False)
         print(f"Deck saved to: {deck_path}")
+        return jsonify({'success': True, 'deck': deck})
     except Exception as e:
         print(f"Error saving deck: {e}")
-        return jsonify({'error': 'Erreur lors de la sauvegarde du deck'}), 500
-    
-    return jsonify(deck), 201
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/decks/<deck_name>')
 def view_deck(deck_name):
@@ -464,19 +494,30 @@ def update_difficulty_settings():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/decks/<deck_id>/review')
-def start_review(deck_id):
+@app.route('/decks/<deck_name>/review')
+def start_review(deck_name):
     """Démarre une session de révision pour un deck"""
-    deck = get_deck(deck_id)
+    print(f"Démarrage de la révision pour le deck: {deck_name}")
+    
+    deck = get_deck(deck_name)
     if deck is None:
+        print(f"Deck non trouvé: {deck_name}")
         return redirect('/')
+    
+    # S'assurer que le deck a un nom
+    if 'name' not in deck:
+        deck['name'] = deck_name
     
     current_time = int(time.time())
     cards_to_review = [card for card in deck.get('flashcards', []) 
                       if card.get('next_review', 0) <= current_time]
     
+    print(f"Nombre de cartes à réviser: {len(cards_to_review)}")
+    print(f"Deck passé à la template: {deck}")
+    
     if not cards_to_review:
-        return redirect(f'/decks/{deck_id}')
+        print("Aucune carte à réviser")
+        return redirect(f'/decks/{deck_name}')
         
     return render_template('review.html', deck=deck, cards=cards_to_review)
 
